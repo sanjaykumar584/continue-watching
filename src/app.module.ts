@@ -7,13 +7,15 @@ import { ContinueWatchingModule } from './continue-watching/continue-watching.mo
 
 import { Video } from './videos/videos.entity';
 import { UserVideoHistory } from './user-video-history/user-video-history.entity';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
-      port: 5432,
+      port: parseInt(process.env.DB_PORT),
       username: 'sanjay584',
       password: '',
       database: 'continue-watching',
@@ -21,7 +23,7 @@ import { UserVideoHistory } from './user-video-history/user-video-history.entity
       synchronize: false,
     }),
     TypeOrmModule.forFeature([Video, UserVideoHistory]), 
-    ContinueWatchingModule,
+    ContinueWatchingModule, AuthModule, UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
