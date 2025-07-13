@@ -9,6 +9,7 @@ import { Video } from './videos/videos.entity';
 import { UserVideoHistory } from './user-video-history/user-video-history.entity';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { ElasticsearchModule } from './elasticsearch/elasticsearch.module';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { UsersModule } from './users/users.module';
       synchronize: false,
     }),
     TypeOrmModule.forFeature([Video, UserVideoHistory]), 
-    ContinueWatchingModule, AuthModule, UsersModule,
+    ContinueWatchingModule, AuthModule, UsersModule, ElasticsearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
