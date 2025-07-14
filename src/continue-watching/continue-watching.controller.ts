@@ -20,7 +20,7 @@ export class ContinueWatchingController {
     console.log('userId:', userId);
     console.log('username', username);
 
-    const data = await this.continueService.getContinueWatching(username);
+    const data = await this.continueService.getContinueWatchingFromES(username);
 
     return {
       success: true,

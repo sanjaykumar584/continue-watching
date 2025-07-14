@@ -5,14 +5,7 @@ import { CustomElasticsearchService } from './elasticsearch.service';
 @Module({
   imports: [
     NestElasticsearchModule.register({
-      node: 'https://localhost:9200',
-      auth: {
-        username: 'elastic',
-        password: 'your-elasticsearch-password', // You got this on first startup
-      },
-      tls: {
-        rejectUnauthorized: false, // For self-signed certs in development
-      },
+      node: 'http://localhost:9200',
     }),
   ],
   providers: [CustomElasticsearchService],

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserVideoHistory } from '../user-video-history/user-video-history.entity';
 import { Repository } from 'typeorm';
@@ -6,7 +6,7 @@ import { Video } from '../videos/videos.entity';
 import { CustomElasticsearchService } from '../elasticsearch/elasticsearch.service';
 
 @Injectable()
-export class ContinueWatchingService {
+export class ContinueWatchingService implements OnModuleInit {
   constructor(
     @InjectRepository(UserVideoHistory)
     private readonly historyRepo: Repository<UserVideoHistory>,
@@ -25,7 +25,24 @@ export class ContinueWatchingService {
       last_watched_at: history.last_watched_at,
       video_title: video.title,
       video_thumbnail: video.thumbnail_url,
+      streaming_url: video.streaming_url,
     });
+  }
+
+  async bulkSyncToElasticsearch() {
+    // Fetch all user video history records
+    const allHistory = await this.historyRepo.find();
+    // Fetch all videos (to avoid N+1 queries)
+    const allVideos = await this.videoRepo.find();
+    // Create a map for quick lookup
+    const videoMap = new Map(allVideos.map(v => [v.id, v]));
+
+    for (const history of allHistory) {
+      const video = videoMap.get(history.video_id);
+      if (video) {
+        await this.syncToElasticsearch(history, video);
+      }
+    }
   }
 
   async getContinueWatchingFromES(userId: string) {
@@ -60,5 +77,9 @@ export class ContinueWatchingService {
         streamingUrl: video?.streaming_url,
       };
     });
+  }
+
+  async onModuleInit() {
+    await this.bulkSyncToElasticsearch();
   }
 }
