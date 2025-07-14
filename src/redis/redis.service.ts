@@ -6,7 +6,7 @@ export class RedisService implements OnModuleInit {
   private client: Redis;
 
   onModuleInit() {
-    this.client = new Redis(); // localhost:6379
+    this.client = new Redis(); // Defaults to localhost:6379
   }
 
   async get(key: string): Promise<string | null> {

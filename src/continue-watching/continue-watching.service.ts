@@ -4,6 +4,7 @@ import { UserVideoHistory } from '../user-video-history/user-video-history.entit
 import { Repository } from 'typeorm';
 import { Video } from '../videos/videos.entity';
 import { CustomElasticsearchService } from '../elasticsearch/elasticsearch.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class ContinueWatchingService implements OnModuleInit {
@@ -13,7 +14,12 @@ export class ContinueWatchingService implements OnModuleInit {
     @InjectRepository(Video)
     private readonly videoRepo: Repository<Video>,
     private readonly esService: CustomElasticsearchService,
+    private readonly redisService: RedisService,
   ) {}
+
+  private getCacheKey(userId: string) {
+    return `continue_watching:user:${userId}`;
+  }
 
   async syncToElasticsearch(history: UserVideoHistory, video: Video) {
     await this.esService.indexDocument({
@@ -27,14 +33,13 @@ export class ContinueWatchingService implements OnModuleInit {
       video_thumbnail: video.thumbnail_url,
       streaming_url: video.streaming_url,
     });
+    // Invalidate cache for this user
+    await this.invalidateContinueWatchingCache(history.user_id);
   }
 
   async bulkSyncToElasticsearch() {
-    // Fetch all user video history records
     const allHistory = await this.historyRepo.find();
-    // Fetch all videos (to avoid N+1 queries)
     const allVideos = await this.videoRepo.find();
-    // Create a map for quick lookup
     const videoMap = new Map(allVideos.map(v => [v.id, v]));
 
     for (const history of allHistory) {
@@ -46,8 +51,24 @@ export class ContinueWatchingService implements OnModuleInit {
   }
 
   async getContinueWatchingFromES(userId: string) {
+    const cacheKey = this.getCacheKey(userId);
+
+    // 1. try cache
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      console.log("inside redis");
+      return JSON.parse(cached);
+    }
+
+    // 2. if not use ES
     const result = await this.esService.searchByUser(userId);
-    return result.hits.hits.map(hit => hit._source);
+    const data = result.hits.hits.map(hit => hit._source);
+    console.log("from es");
+
+    // cache 1 hour (3600 seconds)
+    await this.redisService.set(cacheKey, JSON.stringify(data), 3600);
+
+    return data;
   }
 
   async getContinueWatching(userId: string) {
@@ -81,5 +102,11 @@ export class ContinueWatchingService implements OnModuleInit {
 
   async onModuleInit() {
     await this.bulkSyncToElasticsearch();
+  }
+
+  // Call this after user watches new content to invalidate cache
+  async invalidateContinueWatchingCache(userId: string) {
+    const cacheKey = this.getCacheKey(userId);
+    await this.redisService.del(cacheKey);
   }
 }
