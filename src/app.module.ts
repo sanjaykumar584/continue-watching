@@ -11,6 +11,10 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ElasticsearchModule } from './elasticsearch/elasticsearch.module';
 
+import { Subscription } from './subscriptions/subscription.entity';
+import { Mandate } from './mandates/mandate.entity';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -23,8 +27,9 @@ import { ElasticsearchModule } from './elasticsearch/elasticsearch.module';
       entities: [Video, UserVideoHistory],
       synchronize: false,
     }),
-    TypeOrmModule.forFeature([Video, UserVideoHistory]), 
+    TypeOrmModule.forFeature([Video, UserVideoHistory, Subscription, Mandate]), 
     ContinueWatchingModule, AuthModule, UsersModule, ElasticsearchModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
