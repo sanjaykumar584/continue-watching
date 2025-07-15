@@ -6,14 +6,22 @@ import { UserVideoHistory } from '../user-video-history/user-video-history.entit
 import { Video } from '../videos/videos.entity';
 import { ElasticsearchModule } from '../elasticsearch/elasticsearch.module';
 import { RedisModule } from '../redis/redis.module';
+import { CqrsModule } from '@nestjs/cqrs';
+import { GetContinueWatchingHandler } from './query/get-continue-watching.handler';
+import { UpdateVideoProgressHandler } from './command/update-video-progress.handler';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserVideoHistory, Video]),
     ElasticsearchModule,
     RedisModule,
+    CqrsModule,
   ],
   controllers: [ContinueWatchingController],
-  providers: [ContinueWatchingService]
+  providers: [
+    ContinueWatchingService,
+    GetContinueWatchingHandler,
+    UpdateVideoProgressHandler,
+  ]
 })
 export class ContinueWatchingModule {}

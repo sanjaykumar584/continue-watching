@@ -22,12 +22,24 @@ export class ContinueWatchingService implements OnModuleInit {
   }
 
   async syncToElasticsearch(history: UserVideoHistory, video: Video) {
+    let watch_percentage: number | undefined = undefined;
+    if (
+      typeof video.duration === 'number' &&
+      video.duration > 0 &&
+      typeof history.watch_duration === 'number'
+    ) {
+      watch_percentage = (history.watch_duration / video.duration) * 100;
+      if (!Number.isFinite(watch_percentage)) watch_percentage = 0;
+    } else {
+      watch_percentage = 0;
+    }
+
     await this.esService.indexDocument({
       user_id: history.user_id,
       video_id: history.video_id,
       watch_duration: history.watch_duration,
       video_total_duration: video.duration,
-      watch_percentage: history.watch_percentage,
+      watch_percentage: watch_percentage,
       last_watched_at: history.last_watched_at,
       video_title: video.title,
       video_thumbnail: video.thumbnail_url,
@@ -104,9 +116,45 @@ export class ContinueWatchingService implements OnModuleInit {
     await this.bulkSyncToElasticsearch();
   }
 
-  // Call this after user watches new content to invalidate cache
+  // to remove user cache
   async invalidateContinueWatchingCache(userId: string) {
     const cacheKey = this.getCacheKey(userId);
     await this.redisService.del(cacheKey);
+  }
+
+  async updateVideoProgress(
+    user_id: string,
+    video_id: string,
+    watch_duration: number
+  ): Promise<any> {
+    let history = await this.historyRepo.findOne({ where: { user_id, video_id } });
+
+    const now = new Date();
+    let watch_percentage: number | undefined = undefined;
+    let video_total_duration = history.video_total_duration;
+    console.log(video_total_duration);
+
+    // if (
+    //   typeof video_total_duration === 'number' &&
+    //   video_total_duration > 0 &&
+    //   typeof watch_duration === 'number'
+    // ) {
+    //   watch_percentage = (watch_duration / video_total_duration) * 100;
+    //   if (!Number.isFinite(watch_percentage)) watch_percentage = 0;
+    // } else {
+    //   watch_percentage = 0;
+    // }
+    watch_percentage = (watch_duration / video_total_duration) * 100;
+    console.log("watch percentage:", watch_percentage)
+
+    if (history) {
+      console.log("updating watch percentage")
+      history.watch_duration = watch_duration;
+      if (watch_percentage !== undefined) history.watch_percentage = watch_percentage;
+      history.last_watched_at = now;
+      history.updated_at = now;
+      await this.historyRepo.save(history);
+    }
+    return history;
   }
 }

@@ -1,10 +1,18 @@
-import { Controller, Get, Headers, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Headers, UseGuards, Request, Body, Post } from '@nestjs/common';
 import { ContinueWatchingService } from './continue-watching.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { QueryBus } from '@nestjs/cqrs';
+import { GetContinueWatchingQuery } from './query/get-continue-watching.query';
+import { CommandBus } from '@nestjs/cqrs';
+import { UpdateVideoProgressCommand } from './command/update-video-progress.command';
 
 @Controller('api/v1/continue-watching')
 export class ContinueWatchingController {
-  constructor(private readonly continueService: ContinueWatchingService) {}
+  constructor(
+    private readonly continueService: ContinueWatchingService,
+    private readonly queryBus: QueryBus,
+    private readonly commandBus: CommandBus,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Get()
@@ -20,7 +28,7 @@ export class ContinueWatchingController {
     console.log('userId:', userId);
     console.log('username', username);
 
-    const data = await this.continueService.getContinueWatchingFromES(username);
+    const data = await this.queryBus.execute(new GetContinueWatchingQuery(username));
 
     return {
       success: true,
@@ -28,5 +36,20 @@ export class ContinueWatchingController {
         continueWatching: data,
       },
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('progress')
+  async updateProgress(
+    @Request() req,
+    @Body() body: { videoId: string; watchDuration: number }
+  ) {
+    const userId = req.user.id;
+    console.log("user", userId);
+    const { videoId, watchDuration } = body;
+    const result = await this.commandBus.execute(
+      new UpdateVideoProgressCommand(userId, videoId, watchDuration)
+    );
+    return { success: true, data: result };
   }
 }
