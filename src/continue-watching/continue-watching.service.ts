@@ -45,7 +45,7 @@ export class ContinueWatchingService implements OnModuleInit {
       video_thumbnail: video.thumbnail_url,
       streaming_url: video.streaming_url,
     });
-    // Invalidate cache for this user
+    // remove cache for this user
     await this.invalidateContinueWatchingCache(history.user_id);
   }
 

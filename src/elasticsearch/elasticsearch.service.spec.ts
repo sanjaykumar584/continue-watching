@@ -1,15 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ElasticsearchService } from './elasticsearch.service';
+import { CustomElasticsearchService } from './elasticsearch.service';
+import { ElasticsearchService } from '@nestjs/elasticsearch';
 
-describe('ElasticsearchService', () => {
-  let service: ElasticsearchService;
+describe('CustomElasticsearchService', () => {
+  let service: CustomElasticsearchService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ElasticsearchService],
+      providers: [
+        CustomElasticsearchService,
+        { provide: ElasticsearchService, useValue: {} }, 
+      ],
     }).compile();
 
-    service = module.get<ElasticsearchService>(ElasticsearchService);
+    service = module.get<CustomElasticsearchService>(CustomElasticsearchService);
   });
 
   it('should be defined', () => {

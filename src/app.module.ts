@@ -15,15 +15,18 @@ import { Subscription } from './subscriptions/subscription.entity';
 import { Mandate } from './mandates/mandate.entity';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
       port: parseInt(process.env.DB_PORT),
-      username: 'sanjay584',
-      password: '',
-      database: 'continue-watching',
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_DATABASE,
       entities: [Video, UserVideoHistory],
       synchronize: false,
     }),

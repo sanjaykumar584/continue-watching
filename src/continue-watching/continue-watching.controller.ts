@@ -9,9 +9,9 @@ import { UpdateVideoProgressCommand } from './command/update-video-progress.comm
 @Controller('api/v1/continue-watching')
 export class ContinueWatchingController {
   constructor(
-    private readonly continueService: ContinueWatchingService,
-    private readonly queryBus: QueryBus,
-    private readonly commandBus: CommandBus,
+    private continueService: ContinueWatchingService,
+    private queryBus: QueryBus,
+    private commandBus: CommandBus,
   ) {}
 
   @UseGuards(JwtAuthGuard)

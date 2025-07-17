@@ -12,7 +12,6 @@ export class SubscriptionReportService {
   ) {}
 
   async getEndingTomorrowReport() {
-    // This query fetches subscriptions ending tomorrow, with mandate info if available
     return this.dataSource.query(`
       SELECT
         s.id AS subscription_id,

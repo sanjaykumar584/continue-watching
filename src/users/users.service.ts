@@ -5,6 +5,7 @@ export class UsersService {
   private readonly users = [
     { userId: 1, username: 'user001', password: 'sanjay' },
     { userId: 2, username: 'user002', password: 'sanjay' },
+    { userId: 3, username: 'user003', password: 'sanjay' },
   ];
 
   async findOne(username: string) {

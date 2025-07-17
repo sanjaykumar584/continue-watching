@@ -38,7 +38,7 @@ export class CustomElasticsearchService {
   }
 
   async searchByUser(user_id: string) {
-    // First, ensure the index exists
+    // check if the index exists
     await this.createIndex();
     
     return this.elasticsearchService.search({
