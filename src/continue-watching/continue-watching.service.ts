@@ -22,37 +22,40 @@ export class ContinueWatchingService implements OnModuleInit {
   }
 
   async syncToElasticsearch(history: UserVideoHistory, video: Video) {
-    let watch_percentage: number | undefined = undefined;
-    if (
-      typeof video.duration === 'number' &&
-      video.duration > 0 &&
-      typeof history.watch_duration === 'number'
-    ) {
-      watch_percentage = (history.watch_duration / video.duration) * 100;
-      if (!Number.isFinite(watch_percentage)) watch_percentage = 0;
-    } else {
-      watch_percentage = 0;
+    // watch_percentage between 10 and 90
+    const wp = typeof history.watch_percentage === 'string' ? parseFloat(history.watch_percentage) : history.watch_percentage;
+    if (wp <= 10 || wp >= 90) {
+      return;
     }
 
-    await this.esService.indexDocument({
-      user_id: history.user_id,
-      video_id: history.video_id,
-      watch_duration: history.watch_duration,
-      video_total_duration: video.duration,
-      watch_percentage: watch_percentage,
-      last_watched_at: history.last_watched_at,
-      video_title: video.title,
-      video_thumbnail: video.thumbnail_url,
-      streaming_url: video.streaming_url,
-    });
+    try {
+      await this.esService.indexDocument({
+        user_id: history.user_id,
+        video_id: history.video_id,
+        watch_duration: history.watch_duration,
+        video_total_duration: video.duration,
+        watch_percentage: history.watch_percentage,
+        last_watched_at: history.last_watched_at,
+        video_title: video.title,
+        video_thumbnail: video.thumbnail_url,
+        streaming_url: video.streaming_url,
+      });
+    } catch (e) {
+      console.error('Error indexing document:', e);
+    }
     // remove cache for this user
     await this.invalidateContinueWatchingCache(history.user_id);
   }
 
   async bulkSyncToElasticsearch() {
+    await this.esService.delInd()
+
     const allHistory = await this.historyRepo.find();
     const allVideos = await this.videoRepo.find();
     const videoMap = new Map(allVideos.map(v => [v.id, v]));
+
+    // console.log('allHistory:', allHistory);
+    // console.log('allVideos:', allVideos);
 
     for (const history of allHistory) {
       const video = videoMap.get(history.video_id);
@@ -74,7 +77,9 @@ export class ContinueWatchingService implements OnModuleInit {
 
     // 2. if not use ES
     const result = await this.esService.searchByUser(userId);
+    // console.log(result.hits.hits)
     const data = result.hits.hits.map(hit => hit._source);
+    // console.log(data)
     console.log("from es");
 
     // cache 1 hour (3600 seconds)
@@ -113,7 +118,9 @@ export class ContinueWatchingService implements OnModuleInit {
   }
 
   async onModuleInit() {
+    console.log("inside onMonduleInit");
     await this.bulkSyncToElasticsearch();
+    console.log("sync complete")
   }
 
   // to remove user cache
@@ -134,16 +141,6 @@ export class ContinueWatchingService implements OnModuleInit {
     let video_total_duration = history.video_total_duration;
     console.log(video_total_duration);
 
-    // if (
-    //   typeof video_total_duration === 'number' &&
-    //   video_total_duration > 0 &&
-    //   typeof watch_duration === 'number'
-    // ) {
-    //   watch_percentage = (watch_duration / video_total_duration) * 100;
-    //   if (!Number.isFinite(watch_percentage)) watch_percentage = 0;
-    // } else {
-    //   watch_percentage = 0;
-    // }
     watch_percentage = (watch_duration / video_total_duration) * 100;
     console.log("watch percentage:", watch_percentage)
 
@@ -155,6 +152,8 @@ export class ContinueWatchingService implements OnModuleInit {
       history.updated_at = now;
       await this.historyRepo.save(history);
     }
+
+    await this.bulkSyncToElasticsearch();
     return history;
   }
 }

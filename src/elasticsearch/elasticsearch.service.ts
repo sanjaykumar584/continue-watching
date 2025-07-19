@@ -31,8 +31,11 @@ export class CustomElasticsearchService {
   }
 
   async indexDocument(document: any) {
+    // Use a composite key of user_id and video_id as the document _id
+    const docId = `${document.user_id}_${document.video_id}`;
     return this.elasticsearchService.index({
       index: this.index,
+      id: docId,
       document,
     });
   }
@@ -47,5 +50,19 @@ export class CustomElasticsearchService {
         match: { user_id },
       },
     });
+  }
+
+  async delInd() {
+    try {
+      await this.elasticsearchService.indices.delete({ index: 'continue_watching' });
+      console.log('Index deleted');
+    } catch (e) {
+      if (e.meta && e.meta.body && e.meta.body.error && e.meta.body.error.type === 'index_not_found_exception') {
+        console.log('Index not found, nothing to delete');
+      } else {
+        console.error('Error deleting index:', e);
+        throw e;
+      }
+    }
   }
 }
