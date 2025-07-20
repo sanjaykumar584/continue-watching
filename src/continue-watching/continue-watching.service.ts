@@ -34,7 +34,7 @@ export class ContinueWatchingService implements OnModuleInit {
         video_id: history.video_id,
         watch_duration: history.watch_duration,
         video_total_duration: video.duration,
-        watch_percentage: history.watch_percentage,
+        watch_percentage: Math.round(history.watch_percentage),
         last_watched_at: history.last_watched_at,
         video_title: video.title,
         video_thumbnail: video.thumbnail_url,

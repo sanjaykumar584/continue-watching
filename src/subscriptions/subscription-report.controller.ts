@@ -10,4 +10,16 @@ export class SubscriptionReportController {
     const data = await this.reportService.getEndingTomorrowReport();
     return { success: true, data };
   }
+  
+  @Get('charge-attempts')
+  async getChargeAttempts() {
+    const data = await this.reportService.getChargeAttempts();
+    return { success: true, data };
+  }
+  
+  @Get('overall-stats')
+  async overallStats() {
+    const data = await this.reportService.overallData();
+    return { success: true, data };
+  }
 }
