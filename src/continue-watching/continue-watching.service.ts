@@ -27,6 +27,15 @@ export class ContinueWatchingService implements OnModuleInit {
     if (wp <= 10 || wp >= 90) {
       return;
     }
+    
+    // delete if the video is over
+    if (wp >= 100) {
+      await this.historyRepo.delete({
+        user_id: history.user_id,
+        video_id: history.video_id
+      });
+      return;
+    }
 
     try {
       await this.esService.indexDocument({
